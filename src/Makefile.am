@@ -2083,7 +2083,7 @@ if HAS_JAVA
 $(MESOS_JAR): $(MESOS_JAR_SOURCE) $(MESOS_JAR_GENERATED) java/mesos.pom
 	@echo "Building mesos-$(PACKAGE_VERSION).jar ..."
 	@cd $(abs_top_builddir)/src/java &&  \
-	  env JAVA_HOME=$(JAVA_HOME) $(MVN) -B -q -f mesos.pom clean package
+	  env JAVA_HOME=$(JAVA_HOME) $(MVN) -B -q -f mesos.pom -Dmaven.repo.local=@mavenRepo@ clean package
 
 # Convenience library for JNI bindings.
 # TODO(Charles Reiss): We really should be building the Java library

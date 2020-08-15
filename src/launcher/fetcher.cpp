@@ -97,7 +97,7 @@ static Try<bool> extract(
     string filename = Path(pathWithoutExtension).basename();
     string destinationPath = path::join(destinationDirectory, filename);
 
-    command = {"gunzip", "-d", "-c"};
+    command = {"@gunzip@", "-d", "-c"};
     in = Subprocess::PATH(sourcePath);
     out = Subprocess::PATH(destinationPath);
   } else {

@@ -19,7 +19,8 @@ if sys.version_info < (2,6,0):
 
 
 def scp(host, src, dst):
-    cmd = 'scp -pr %s %s' % (src, host + ':' + dst)
+    cmd = '@scp@ -pr %s %s' % (src, host + ':' + dst)
+
     try:
         process = subprocess.Popen(
             cmd,

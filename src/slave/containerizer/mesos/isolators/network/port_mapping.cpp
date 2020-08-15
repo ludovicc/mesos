@@ -1384,19 +1384,19 @@ Try<Isolator*> PortMappingIsolatorProcess::create(const Flags& flags)
   // Check the availability of a few Linux commands that we will use.
   // We use the blocking os::shell here because 'create' will only be
   // invoked during initialization.
-  Try<string> checkCommandTc = os::shell("tc filter show");
+  Try<string> checkCommandTc = os::shell("@tc@ filter show");
   if (checkCommandTc.isError()) {
     return Error("Check command 'tc' failed: " + checkCommandTc.error());
   }
 
   // NOTE: loopback device always exists.
-  Try<string> checkCommandEthtool = os::shell("ethtool -k lo");
+  Try<string> checkCommandEthtool = os::shell("@ethtool@ -k lo");
   if (checkCommandEthtool.isError()) {
     return Error("Check command 'ethtool' failed: "
                  + checkCommandEthtool.error());
   }
 
-  Try<string> checkCommandIp = os::shell("ip link show");
+  Try<string> checkCommandIp = os::shell("@ip@ link show");
   if (checkCommandIp.isError()) {
     return Error("Check command 'ip' failed: " + checkCommandIp.error());
   }
@@ -1950,9 +1950,9 @@ Try<Isolator*> PortMappingIsolatorProcess::create(const Flags& flags)
     // visible. It's OK to use the blocking os::shell here because
     // 'create' will only be invoked during initialization.
     Try<string> mount = os::shell(
-        "mount --bind %s %s && "
-        "mount --make-slave %s && "
-        "mount --make-shared %s",
+        "@mount@ --bind %s %s && "
+        "@mount@ --make-slave %s && "
+        "@mount@ --make-shared %s",
         bindMountRoot->c_str(),
         bindMountRoot->c_str(),
         bindMountRoot->c_str(),
@@ -1969,8 +1969,8 @@ Try<Isolator*> PortMappingIsolatorProcess::create(const Flags& flags)
       // shared mount yet (possibly due to slave crash while preparing
       // the work directory mount). It's safe to re-do the following.
       Try<string> mount = os::shell(
-          "mount --make-slave %s && "
-          "mount --make-shared %s",
+          "@mount@ --make-slave %s && "
+          "@mount@ --make-shared %s",
           bindMountRoot->c_str(),
           bindMountRoot->c_str());
 
@@ -1989,8 +1989,8 @@ Try<Isolator*> PortMappingIsolatorProcess::create(const Flags& flags)
           // so that they are in different peer groups.
           if (entry.shared() == bindMountEntry->shared()) {
             Try<string> mount = os::shell(
-                "mount --make-slave %s && "
-                "mount --make-shared %s",
+                "@mount@ --make-slave %s && "
+                "@mount@ --make-shared %s",
                 bindMountRoot->c_str(),
                 bindMountRoot->c_str());
 
@@ -3945,6 +3945,8 @@ Try<Nothing> PortMappingIsolatorProcess::removeHostIPFilters(
 // TODO(jieyu): Use the Subcommand abstraction to remove most of the
 // logic here. Completely remove this function once we can assume a
 // newer kernel where 'setns' works for mount namespaces.
+// cstrahan(nixos): this is executed in the container,
+// so we don't want to substitute paths here.
 string PortMappingIsolatorProcess::scripts(Info* info)
 {
   ostringstream script;
@@ -3955,7 +3957,7 @@ string PortMappingIsolatorProcess::scripts(Info* info)
   // Mark the mount point PORT_MAPPING_BIND_MOUNT_ROOT() as slave
   // mount so that changes in the container will not be propagated to
   // the host.
-  script << "mount --make-rslave " << bindMountRoot << "\n";
+  script << "@mount@ --make-rslave " << bindMountRoot << "\n";
 
   // Disable IPv6 when IPv6 module is loaded as IPv6 packets won't be
   // forwarded anyway.
@@ -3963,7 +3965,7 @@ string PortMappingIsolatorProcess::scripts(Info* info)
          << " echo 1 > /proc/sys/net/ipv6/conf/all/disable_ipv6\n";
 
   // Configure lo and eth0.
-  script << "ip link set " << lo << " address " << hostMAC
+  script << "@ip@ link set " << lo << " address " << hostMAC
          << " mtu " << hostEth0MTU << " up\n";
 
   // NOTE: This is mostly a kernel issue: in veth_xmit() the kernel
@@ -3972,13 +3974,13 @@ string PortMappingIsolatorProcess::scripts(Info* info)
   // when we receive a packet with a bad checksum. Disabling rx
   // checksum offloading ensures the TCP layer will checksum and drop
   // it.
-  script << "ethtool -K " << eth0 << " rx off\n";
-  script << "ip link set " << eth0 << " address " << hostMAC
+  script << "@ethtool@ -K " << eth0 << " rx off\n";
+  script << "@ip@ link set " << eth0 << " address " << hostMAC
          << " mtu " << hostEth0MTU << " up\n";
-  script << "ip addr add " << hostIPNetwork << " dev " << eth0 << "\n";
+  script << "@ip@ addr add " << hostIPNetwork << " dev " << eth0 << "\n";
 
   // Set up the default gateway to match that of eth0.
-  script << "ip route add default via " << hostDefaultGateway << "\n";
+  script << "@ip@ route add default via " << hostDefaultGateway << "\n";
 
   // Restrict the ephemeral ports that can be used by the container.
   script << "echo " << info->ephemeralPorts.lower() << " "
@@ -4007,30 +4009,30 @@ string PortMappingIsolatorProcess::scripts(Info* info)
   }
 
   // Set up filters on lo and eth0.
-  script << "tc qdisc add dev " << lo << " ingress\n";
-  script << "tc qdisc add dev " << eth0 << " ingress\n";
+  script << "@tc@ qdisc add dev " << lo << " ingress\n";
+  script << "@tc@ qdisc add dev " << eth0 << " ingress\n";
 
   // Allow talking between containers and from container to host.
   // TODO(chzhcn): Consider merging the following two filters.
-  script << "tc filter add dev " << lo << " parent " << ingress::HANDLE
+  script << "@tc@ filter add dev " << lo << " parent " << ingress::HANDLE
          << " protocol ip"
          << " prio " << Priority(IP_FILTER_PRIORITY, NORMAL).get() << " u32"
          << " flowid ffff:0"
          << " match ip dst " << hostIPNetwork.address()
          << " action mirred egress redirect dev " << eth0 << "\n";
 
-  script << "tc filter add dev " << lo << " parent " << ingress::HANDLE
+  script << "@tc@ filter add dev " << lo << " parent " << ingress::HANDLE
          << " protocol ip"
          << " prio " << Priority(IP_FILTER_PRIORITY, NORMAL).get() << " u32"
          << " flowid ffff:0"
          << " match ip dst "
-         << net::IP::Network::LOOPBACK_V4().address()
+         << net::IPNetwork::LOOPBACK_V4().address()
          << " action mirred egress redirect dev " << eth0 << "\n";
 
   foreach (const PortRange& range,
            getPortRanges(info->nonEphemeralPorts + info->ephemeralPorts)) {
     // Local traffic inside a container will not be redirected to eth0.
-    script << "tc filter add dev " << lo << " parent " << ingress::HANDLE
+    script << "@tc@ filter add dev " << lo << " parent " << ingress::HANDLE
            << " protocol ip"
            << " prio " << Priority(IP_FILTER_PRIORITY, HIGH).get() << " u32"
            << " flowid ffff:0"
@@ -4039,37 +4041,37 @@ string PortMappingIsolatorProcess::scripts(Info* info)
 
     // Traffic going to host loopback IP and ports assigned to this
     // container will be redirected to lo.
-    script << "tc filter add dev " << eth0 << " parent " << ingress::HANDLE
+    script << "@tc@ filter add dev " << eth0 << " parent " << ingress::HANDLE
            << " protocol ip"
            << " prio " << Priority(IP_FILTER_PRIORITY, NORMAL).get() << " u32"
            << " flowid ffff:0"
            << " match ip dst "
-           << net::IP::Network::LOOPBACK_V4().address()
+           << net::IPNetwork::LOOPBACK_V4().address()
            << " match ip dport " << range.begin() << " "
            << hex << range.mask() << dec
            << " action mirred egress redirect dev " << lo << "\n";
   }
 
   // Do not forward the ICMP packet if the destination IP is self.
-  script << "tc filter add dev " << lo << " parent " << ingress::HANDLE
+  script << "@tc@ filter add dev " << lo << " parent " << ingress::HANDLE
          << " protocol ip"
          << " prio " << Priority(ICMP_FILTER_PRIORITY, NORMAL).get() << " u32"
          << " flowid ffff:0"
          << " match ip protocol 1 0xff"
          << " match ip dst " << hostIPNetwork.address() << "\n";
 
-  script << "tc filter add dev " << lo << " parent " << ingress::HANDLE
+  script << "@tc@ filter add dev " << lo << " parent " << ingress::HANDLE
          << " protocol ip"
          << " prio " << Priority(ICMP_FILTER_PRIORITY, NORMAL).get() << " u32"
          << " flowid ffff:0"
          << " match ip protocol 1 0xff"
          << " match ip dst "
-         << net::IP::Network::LOOPBACK_V4().address() << "\n";
+         << net::IPNetwork::LOOPBACK_V4().address() << "\n";
 
   // Display the filters created on eth0 and lo.
-  script << "tc filter show dev " << eth0
+  script << "@tc@ filter show dev " << eth0
          << " parent " << ingress::HANDLE << "\n";
-  script << "tc filter show dev " << lo
+  script << "@tc@ filter show dev " << lo
          << " parent " << ingress::HANDLE << "\n";
 
   // If throughput limit for container egress traffic exists, use HTB
@@ -4081,9 +4083,9 @@ string PortMappingIsolatorProcess::scripts(Info* info)
   // throughput. TBF requires other parameters such as 'burst' that
   // HTB already has default values for.
   if (egressRateLimitPerContainer.isSome()) {
-    script << "tc qdisc add dev " << eth0 << " root handle "
+    script << "@tc@ qdisc add dev " << eth0 << " root handle "
            << CONTAINER_TX_HTB_HANDLE << " htb default 1\n";
-    script << "tc class add dev " << eth0 << " parent "
+    script << "@tc@ class add dev " << eth0 << " parent "
            << CONTAINER_TX_HTB_HANDLE << " classid "
            << CONTAINER_TX_HTB_CLASS_ID << " htb rate "
            << egressRateLimitPerContainer->bytes() * 8 << "bit\n";
@@ -4094,12 +4096,12 @@ string PortMappingIsolatorProcess::scripts(Info* info)
     // fq_codel, which has a larger buffer and better control on
     // buffer bloat.
     // TODO(cwang): Verity that fq_codel qdisc is available.
-    script << "tc qdisc add dev " << eth0
+    script << "@tc@ qdisc add dev " << eth0
            << " parent " << CONTAINER_TX_HTB_CLASS_ID << " fq_codel\n";
 
     // Display the htb qdisc and class created on eth0.
-    script << "tc qdisc show dev " << eth0 << "\n";
-    script << "tc class show dev " << eth0 << "\n";
+    script << "@tc@ qdisc show dev " << eth0 << "\n";
+    script << "@tc@ class show dev " << eth0 << "\n";
   }
 
   return script.str();

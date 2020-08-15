@@ -114,7 +114,7 @@ Future<Nothing> CurlFetcherPlugin::fetch(
   }
 
 #ifndef __WINDOWS__
-  const string curl = "curl";
+  const string curl = "@curl@";
 #else
   const string curl = "curl.exe";
 #endif // __WINDOWS__

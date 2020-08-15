@@ -40,7 +40,7 @@ def resolve(master):
     import subprocess
 
     process = subprocess.Popen(
-        ['mesos-resolve', master],
+        ['@mesos-resolve@', master],
         stdin=None,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,

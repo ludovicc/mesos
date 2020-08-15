@@ -156,7 +156,7 @@ static Future<http::Response> curl(
   string cmd = strings::join(" ", argv);
 
   Try<Subprocess> s = subprocess(
-      "curl",
+      "@curl@",
       argv,
       Subprocess::PATH(os::DEV_NULL),
       Subprocess::PIPE(),
@@ -282,7 +282,7 @@ static Future<int> download(
   string cmd = strings::join(" ", argv);
 
   Try<Subprocess> s = subprocess(
-      "curl",
+      "@curl@",
       argv,
       Subprocess::PATH(os::DEV_NULL),
       Subprocess::PIPE(),

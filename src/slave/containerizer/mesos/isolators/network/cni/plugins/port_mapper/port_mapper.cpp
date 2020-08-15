@@ -313,7 +313,7 @@ Try<Nothing> PortMapper::addPortMapping(
       # Check if the `chain` exists in the iptable. If it does not
       # exist go ahead and install the chain in the iptables NAT
       # table.
-      iptables -w -n -t nat --list %s
+      @iptables@ -w -n -t nat --list %s
       if [ $? -ne 0 ]; then
         # NOTE: When we create the chain, there is a possibility of a
         # race due to which a container launch can fail. This can
@@ -327,25 +327,25 @@ Try<Nothing> PortMapper::addPortMapping(
         # since it can happen only when the chain is created the first
         # time and two commands for creation of the chain are executed
         # simultaneously.
-        (iptables -w -t nat -N %s || exit 1)
+        (@iptables@ -w -t nat -N %s || exit 1)
 
         # Once the chain has been installed add a rule in the PREROUTING
         # chain to jump to this chain for any packets that are
         # destined to a local address.
-        (iptables -w -t nat -A PREROUTING \
+        (@iptables@ -w -t nat -A PREROUTING \
         -m addrtype --dst-type LOCAL -j %s || exit 1)
 
         # For locally generated packets we need a rule in the OUTPUT
         # chain as well, since locally generated packets directly hit
         # the output CHAIN, bypassing PREROUTING.
-        (iptables -w -t nat -A OUTPUT \
+        (@iptables@ -w -t nat -A OUTPUT \
         ! -d 127.0.0.0/8 -m addrtype \
         --dst-type LOCAL -j %s || exit 1)
       fi
 
       # Within the `chain` go ahead and install the DNAT rule, if it
       # does not exist.
-      (iptables -w -t nat -C %s || iptables -w -t nat -A %s))~",
+      (@iptables@ -w -t nat -C %s || @iptables@ -w -t nat -A %s))~",
       chain,
       chain,
       chain,
@@ -392,7 +392,7 @@ Try<Nothing> PortMapper::delPortMapping()
 
       trap cleanup EXIT
 
-      iptables -w -t nat -S %s | sed -n "/%s/ s/-A/iptables -w -t nat -D/p" > $FILE
+      @iptables@ -w -t nat -S %s | sed -n "/%s/ s/-A/@iptables@ -w -t nat -D/p" > $FILE
       sh $FILE
       )~",
       chain,

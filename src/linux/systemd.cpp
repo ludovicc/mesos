@@ -200,13 +200,21 @@ bool exists()
   // This is static as the init system should not change while we are running.
   static const bool exists = []() -> bool {
     // (1) Test whether `/sbin/init` links to systemd.
-    const Result<string> realpath = os::realpath("/sbin/init");
-    if (realpath.isError() || realpath.isNone()) {
-      LOG(WARNING) << "Failed to test /sbin/init for systemd environment: "
-                   << (realpath.isError() ? realpath.error()
-                                          : "does not exist");
+    // cstrahan(nixos): first assume we're on NixOS, then try non-NixOS
+    Result<string> realpath = os::realpath("/run/current-system/systemd/lib/systemd/systemd");
+    Result<string> realpathNixOS = realpath;
+    if (realpathNixOS.isError() || realpathNixOS.isNone()) {
+      Result<string> realpathNonNixOS = realpath = os::realpath("/sbin/init");
+      if (realpathNonNixOS.isError() || realpathNonNixOS.isNone()) {
+        LOG(WARNING) << "Failed to test /run/current-system/systemd/lib/systemd/systemd for systemd environment: "
+                     << (realpathNixOS.isError() ? realpathNixOS.error()
+                                                 : "does not exist");
+        LOG(WARNING) << "Failed to test /sbin/init for systemd environment: "
+                     << (realpathNonNixOS.isError() ? realpathNonNixOS.error()
+                                                    : "does not exist");
 
-      return false;
+        return false;
+      }
     }
 
     CHECK_SOME(realpath);
@@ -282,6 +290,10 @@ Path hierarchy()
 
 Try<Nothing> daemonReload()
 {
+  // cstrahan(nixos): should we patch these `systemctl`s?
+  // probably don't want to hard-code a particular systemd store path here,
+  // but if we use /run/current-system/sw/bin/systemctl,
+  // we won't be able to support non-NixOS distros.
   Try<string> daemonReload = os::shell("systemctl daemon-reload");
   if (daemonReload.isError()) {
     return Error("Failed to reload systemd daemon: " + daemonReload.error());

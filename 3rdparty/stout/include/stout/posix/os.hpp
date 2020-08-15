@@ -364,7 +364,7 @@ inline Try<std::set<pid_t>> pids(Option<pid_t> group, Option<pid_t> session)
 inline Try<Nothing> tar(const std::string& path, const std::string& archive)
 {
   Try<std::string> tarOut =
-    os::shell("tar %s %s %s", "-czf", archive.c_str(), path.c_str());
+    os::shell("@tar@ %s %s %s", "-czf", archive.c_str(), path.c_str());
 
   if (tarOut.isError()) {
     return Error("Failed to archive " + path + ": " + tarOut.error());

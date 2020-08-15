@@ -340,7 +340,7 @@ Try<NvidiaVolume> NvidiaVolume::create()
     string path = path::join(hostPath, "bin", binary);
 
     if (!os::exists(path)) {
-      string command = "which " + binary;
+      string command = "@which@ " + binary;
       Try<string> which = os::shell(command);
 
       if (which.isSome()) {
@@ -354,7 +354,7 @@ Try<NvidiaVolume> NvidiaVolume::create()
                               : "No such file or directory"));
         }
 
-        command = "cp " + realpath.get() + " " + path;
+        command = "@cp@ " + realpath.get() + " " + path;
         Try<string> cp = os::shell(command);
         if (cp.isError()) {
           return Error("Failed to os::shell '" + command + "': " + cp.error());
@@ -426,7 +426,7 @@ Try<NvidiaVolume> NvidiaVolume::create()
             Path(realpath.get()).basename());
 
         if (!os::exists(libraryPath)) {
-          string command = "cp " + realpath.get() + " " + libraryPath;
+          string command = "@cp@ " + realpath.get() + " " + libraryPath;
           Try<string> cp = os::shell(command);
           if (cp.isError()) {
             return Error("Failed to os::shell '" + command + "':"

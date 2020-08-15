@@ -98,7 +98,7 @@ Future<Nothing> CopyFetcherPlugin::fetch(
   VLOG(1) << "Copying '" << uri.path() << "' to '" << directory << "'";
 
 #ifndef __WINDOWS__
-  const char* copyCommand = "cp";
+  const char* copyCommand = "@cp@";
   const vector<string> argv = {"cp", "-a", uri.path(), directory};
 #else // __WINDOWS__
   const char* copyCommand = os::Shell::name;

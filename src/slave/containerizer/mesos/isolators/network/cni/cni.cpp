@@ -230,9 +230,9 @@ Try<Isolator*> NetworkCniIsolatorProcess::create(const Flags& flags)
       // here because 'create' will only be invoked during
       // initialization.
       Try<string> mount = os::shell(
-          "mount --bind %s %s && "
-          "mount --make-private %s && "
-          "mount --make-shared %s",
+          "@mount@ --bind %s %s && "
+          "@mount@ --make-private %s && "
+          "@mount@ --make-shared %s",
           rootDir->c_str(),
           rootDir->c_str(),
           rootDir->c_str(),
@@ -252,8 +252,8 @@ Try<Isolator*> NetworkCniIsolatorProcess::create(const Flags& flags)
       LOG(INFO) << "Making '" << rootDir.get() << "' a shared mount";
 
       Try<string> mount = os::shell(
-          "mount --make-private %s && "
-          "mount --make-shared %s",
+          "@mount@ --make-private %s && "
+          "@mount@ --make-shared %s",
           rootDir->c_str(),
           rootDir->c_str());
 

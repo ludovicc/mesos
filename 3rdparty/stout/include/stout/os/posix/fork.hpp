@@ -365,7 +365,7 @@ private:
     if (exec.isSome()) {
       // Execute the command (via '/bin/sh -c command').
       const char* command = exec->command.c_str();
-      execlp("sh", "sh", "-c", command, (char*) nullptr);
+      execlp("@sh@", "sh", "-c", command, (char*) nullptr);
       EXIT(EXIT_FAILURE)
         << "Failed to execute '" << command << "': " << os::strerror(errno);
     } else if (wait.isSome()) {

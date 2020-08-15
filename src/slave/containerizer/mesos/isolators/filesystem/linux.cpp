@@ -332,9 +332,9 @@ static Try<Nothing> ensureSharedMount(const string& _targetDir)
       // here because 'create' will only be invoked during
       // initialization.
       Try<string> mount = os::shell(
-          "mount --bind %s %s && "
-          "mount --make-private %s && "
-          "mount --make-shared %s",
+          "@mount@ --bind %s %s && "
+          "@mount@ --make-private %s && "
+          "@mount@ --make-shared %s",
           targetDir.get(),
           targetDir.get(),
           targetDir.get(),
@@ -353,8 +353,8 @@ static Try<Nothing> ensureSharedMount(const string& _targetDir)
       LOG(INFO) << "Making '" << targetDir.get() << "' a shared mount";
 
       Try<string> mount = os::shell(
-          "mount --make-private %s && "
-          "mount --make-shared %s",
+          "@mount@ --make-private %s && "
+          "@mount@ --make-shared %s",
           targetDir.get(),
           targetDir.get());
 

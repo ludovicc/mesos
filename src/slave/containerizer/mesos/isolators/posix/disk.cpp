@@ -633,7 +633,7 @@ private:
     // NOTE: The supervisor childhook will watch the parent process and kill
     // the 'du' process in case that the parent die.
     Try<Subprocess> s = subprocess(
-        "du",
+        "@du@",
         command,
         Subprocess::PATH(os::DEV_NULL),
         Subprocess::PIPE(),
